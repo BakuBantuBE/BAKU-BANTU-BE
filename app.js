@@ -14,7 +14,9 @@ const allowedOrigins = [
   "http://localhost:3000",
   "https://fe-bakubantu.vercel.app",
   "https://fe-bakubantuu.vercel.app",
-  "https://fe-bakubantu-829j.vercel.app"
+  "https://fe-bakubantu-829j.vercel.app",
+  "www.bakubantusulut.org",
+  "https://www.bakubantusulut.org"
 
 ];
 // Middleware untuk mengizinkan CORS dengan credentials (cookies)

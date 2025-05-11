@@ -185,7 +185,7 @@ const sendAdminCreationEmail = async (volunteer, defaultPassword) => {
             </div>
             <p>Langsung coba peran barumu dengan login ke dashboard admin:</p>
             <p style="text-align: center;">
-              <a href="http://localhost:3000/login" class="button">🔗 Login ke Dashboard Admin</a>
+              <a href="https://bakubantusulut.org/login" class="button">🔗 Login ke Dashboard Admin</a>
             </p>
             <p>Dengan akun admin, kamu bisa:</p>
             <ul>

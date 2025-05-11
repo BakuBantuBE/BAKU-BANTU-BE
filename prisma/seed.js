@@ -58,7 +58,7 @@ async function main() {
       return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
     };
 
-    // Random phone number generator
+    // Random phone number generatorr
     const getRandomPhone = () => {
       return `08${Math.floor(10000000 + Math.random() * 90000000)}`;
     };
