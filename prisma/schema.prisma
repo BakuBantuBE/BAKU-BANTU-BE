@@ -1,0 +1,133 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPERADMIN
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum VolunteerStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
+}
+
+enum EntityStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model User {
+  id       String     @id @default(uuid())
+  email    String     @unique
+  password String
+  role     UserRole
+  status   UserStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Volunteer {
+  id              String          @id @default(uuid())
+  namaLengkap     String
+  jenisKelamin    Gender
+  tempatLahir     String
+  tanggalLahir    DateTime
+  alamatDomisili  String
+  kewarganegaraan String
+  nomorHP         String
+  email           String          @unique
+  wilayahId       Int
+  profileImage    String?
+  jabatan         String?
+  status          VolunteerStatus @default(PENDING)
+
+  // Relation to Wilayah
+  wilayah   Wilayah? @relation(fields: [wilayahId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Wilayah {
+  id        Int      @id @default(autoincrement())
+  nama      String   @unique
+  provinsi  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  status    String   @default("ACTIVE")
+
+  // Relations
+  pantis     Panti[]
+  volunteers Volunteer[]
+}
+
+model Yayasan {
+  id             Int      @id @default(autoincrement())
+  namaYayasan    String
+  alamatYayasan  String
+  emailYayasan   String?
+  kontakYayasan  Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  status         EntityStatus @default(ACTIVE)
+  
+  // Relations
+  pantis Panti[]
+}
+
+model Panti {
+  id                Int      @id @default(autoincrement())
+  namaPanti         String
+  fotoUtama         String?
+  deskripsiSingkat  String   @db.Text
+  jumlahAnak        Int      @default(0)
+  status            EntityStatus @default(ACTIVE)
+  
+  // Relations
+  yayasanId         Int
+  yayasan           Yayasan  @relation(fields: [yayasanId], references: [id])
+  
+  wilayahId         Int
+  wilayah           Wilayah  @relation(fields: [wilayahId], references: [id])
+  
+  detailPanti       DetailPanti?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model DetailPanti {
+  id                  Int      @id @default(autoincrement())
+  fokusPelayanan      String
+  alamatLengkap       String
+  deskripsiLengkap    String   @db.Text
+  jumlahPengasuh      Int
+  jumlahPenghuni      Json     // {"laki_laki": 25, "perempuan": 20}
+  kategoriKebutuhan   Json?    // ["Sembako", "Peralatan Sekolah", "Peralatan Mandi"]
+  sumbanganDiterima   Json?    // ["Pangan", "Sandang", "Tunai", "Kebutuhan Asuh"]
+  
+  // Relations
+  pantiId             Int      @unique
+  panti               Panti    @relation(fields: [pantiId], references: [id])
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}

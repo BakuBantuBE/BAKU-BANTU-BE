@@ -1,0 +1,7 @@
+-- AlterTable
+ALTER TABLE "Profile" ALTER COLUMN "namaLengkap" DROP NOT NULL,
+ALTER COLUMN "tempatLahir" DROP NOT NULL,
+ALTER COLUMN "tanggalLahir" DROP NOT NULL,
+ALTER COLUMN "alamatDomisili" DROP NOT NULL,
+ALTER COLUMN "kewarganegaraan" DROP NOT NULL,
+ALTER COLUMN "nomorHP" DROP NOT NULL;
