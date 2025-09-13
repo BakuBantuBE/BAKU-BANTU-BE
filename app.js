@@ -49,13 +49,8 @@ app.use('/wilayah', wilayahRoutes);
 app.use('/volunteers', volunteerRoutes);
 app.use('/yayasan', yayasanRoutes); 
 
-// Start cron jobs only in development (not in Vercel)
-if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
-  cronJobService.startCronJobs();
-  console.log('🚀 Cron jobs started for development environment');
-} else {
-  console.log('⏭️ Cron jobs skipped - running in production/Vercel environment');
-}
+// Disable local cron jobs - only use Vercel cron
+console.log('⏭️ Local cron jobs disabled - using Vercel cron jobs only');
 
 // Test routes for manual control
 app.get('/test/inject-wilayah', async (req, res) => {
