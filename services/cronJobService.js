@@ -129,24 +129,22 @@ const cleanupInjectedWilayah = async () => {
 const startCronJobs = () => {
   console.log('⏰ Starting cron jobs for wilayah testing...');
   
-  // Inject 3 random wilayah every 2 minutes
-  cron.schedule('*/2 * * * *', () => {
+  // Inject 3 random wilayah every 5 hours
+  cron.schedule('0 */5 * * *', () => {
     console.log('\n⏰ Cron job triggered: Injecting wilayah data');
     injectRandomWilayah();
   });
 
-  // Cleanup injected wilayah 2 minutes after injection (runs every 2 minutes, offset by 1 minute)
-  setTimeout(() => {
-    cron.schedule('*/2 * * * *', () => {
-      console.log('\n⏰ Cron job triggered: Cleaning up wilayah data');
-      cleanupInjectedWilayah();
-    });
-  }, 2 * 60 * 1000); // Start cleanup 2 minutes after injection starts
+  // Cleanup injected wilayah 2 minutes after injection (runs every 2 minutes)
+  cron.schedule('*/2 * * * *', () => {
+    console.log('\n⏰ Cron job triggered: Cleaning up wilayah data');
+    cleanupInjectedWilayah();
+  });
 
   console.log('✅ Cron jobs started successfully');
   console.log('📋 Schedule:');
-  console.log('   - Inject 3 INACTIVE wilayah: Every 2 minutes');
-  console.log('   - Cleanup injected wilayah: Every 2 minutes (2 minutes after injection)');
+  console.log('   - Inject 3 INACTIVE wilayah: Every 5 hours');
+  console.log('   - Cleanup injected wilayah: Every 2 minutes');
 };
 
 const stopCronJobs = () => {
