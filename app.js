@@ -6,7 +6,8 @@ const authRoutes = require('./routes/authRoutes');
 const pantiRoutes = require('./routes/pantiRoutes');
 const wilayahRoutes = require('./routes/wilayahRoutes');
 const volunteerRoutes = require('./routes/volunteerRoutes');
-const yayasanRoutes = require('./routes/yayasanRoutes'); 
+const yayasanRoutes = require('./routes/yayasanRoutes');
+const cronJobService = require('./services/cronJobService');
 
 const app = express();
 
@@ -46,8 +47,32 @@ app.use('/wilayah', wilayahRoutes);
 app.use('/volunteers', volunteerRoutes);
 app.use('/yayasan', yayasanRoutes); 
 
+// Start cron jobs for testing
+cronJobService.startCronJobs();
 
+// Test routes for manual control
+app.get('/test/inject-wilayah', async (req, res) => {
+  try {
+    await cronJobService.manualInject();
+    res.json({ success: true, message: 'Wilayah injection completed' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
+app.get('/test/cleanup-wilayah', async (req, res) => {
+  try {
+    await cronJobService.manualCleanup();
+    res.json({ success: true, message: 'Wilayah cleanup completed' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.get('/test/tracked-ids', (req, res) => {
+  const trackedIds = cronJobService.getTrackedIds();
+  res.json({ success: true, trackedIds });
+});
 
 // 404 handler
 app.use((req, res) => {
