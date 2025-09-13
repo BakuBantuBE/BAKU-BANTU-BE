@@ -12,5 +12,15 @@
         "dest": "index.js"
       }
     ],
-    "outputDirectory": "build"
+    "outputDirectory": "build",
+    "crons": [
+      {
+        "path": "/api/cron/inject-wilayah",
+        "schedule": "0 9 * * *"
+      },
+      {
+        "path": "/api/cron/cleanup-wilayah",
+        "schedule": "0 18 * * *"
+      }
+    ]
   }

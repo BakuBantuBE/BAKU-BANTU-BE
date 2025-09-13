@@ -17,7 +17,9 @@ const allowedOrigins = [
   "https://fe-bakubantuu.vercel.app",
   "https://fe-bakubantu-829j.vercel.app",
   "www.bakubantusulut.org",
-  "https://www.bakubantusulut.org"
+  "https://www.bakubantusulut.org",
+  "www.be-bakubantusulut.org",
+  "https://www.be-bakubantusulut.org"
 
 ];
 // Middleware untuk mengizinkan CORS dengan credentials (cookies)
@@ -47,8 +49,13 @@ app.use('/wilayah', wilayahRoutes);
 app.use('/volunteers', volunteerRoutes);
 app.use('/yayasan', yayasanRoutes); 
 
-// Start cron jobs for testing
-cronJobService.startCronJobs();
+// Start cron jobs only in development (not in Vercel)
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+  cronJobService.startCronJobs();
+  console.log('🚀 Cron jobs started for development environment');
+} else {
+  console.log('⏭️ Cron jobs skipped - running in production/Vercel environment');
+}
 
 // Test routes for manual control
 app.get('/test/inject-wilayah', async (req, res) => {
@@ -72,6 +79,37 @@ app.get('/test/cleanup-wilayah', async (req, res) => {
 app.get('/test/tracked-ids', (req, res) => {
   const trackedIds = cronJobService.getTrackedIds();
   res.json({ success: true, trackedIds });
+});
+
+app.get('/test/db-status', async (req, res) => {
+  try {
+    console.log('🔍 Testing database connection from endpoint...');
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+    
+    const result = await prisma.$queryRaw`SELECT 1 as test`;
+    const wilayahCount = await prisma.wilayah.count();
+    const inactiveCount = await prisma.wilayah.count({ where: { status: 'INACTIVE' } });
+    
+    await prisma.$disconnect();
+    
+    res.json({ 
+      success: true, 
+      database_connection: 'OK',
+      test_query: result,
+      total_wilayah: wilayahCount,
+      inactive_wilayah: inactiveCount,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Database test failed:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      code: error.code,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // 404 handler

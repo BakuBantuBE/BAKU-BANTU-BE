@@ -5,18 +5,6 @@ const prisma = new PrismaClient();
 
 let injectedWilayahIds = [];
 
-const generateRandomWilayahName = () => {
-  const cities = [
-    'Bandung Testing', 'Jakarta Testing', 'Surabaya Testing', 
-    'Medan Testing', 'Makassar Testing', 'Semarang Testing',
-    'Palembang Testing', 'Tangerang Testing', 'Depok Testing',
-    'Bekasi Testing', 'Solo Testing', 'Batam Testing'
-  ];
-  const suffix = Math.random().toString(36).substring(2, 8);
-  const randomCity = cities[Math.floor(Math.random() * cities.length)];
-  return `${randomCity} ${suffix}`;
-};
-
 const generateRandomProvinsi = () => {
   const provinces = [
     'Jawa Barat Testing', 'DKI Jakarta Testing', 'Jawa Timur Testing',
@@ -26,125 +14,90 @@ const generateRandomProvinsi = () => {
   return provinces[Math.floor(Math.random() * provinces.length)];
 };
 
-const injectRandomWilayah = async () => {
+// Fungsi untuk membuat data Wilayah baru
+async function createWilayahData() {
   try {
-    console.log('🚀 Starting wilayah injection...');
-    
-    const wilayahData = [];
-    for (let i = 0; i < 3; i++) {
-      wilayahData.push({
-        nama: generateRandomWilayahName(),
+    const wilayahName = `Wilayah_Testing_${Date.now()}`;
+    const newWilayah = await prisma.wilayah.create({
+      data: {
+        nama: wilayahName,
         provinsi: generateRandomProvinsi(),
         status: 'INACTIVE'
-      });
-    }
-
-    const createdWilayah = await prisma.wilayah.createMany({
-      data: wilayahData,
-      skipDuplicates: true
+      }
     });
-
-    // Get the IDs of newly created wilayah with INACTIVE status
-    const recentInactiveWilayah = await prisma.wilayah.findMany({
-      where: {
-        status: 'INACTIVE',
-        createdAt: {
-          gte: new Date(Date.now() - 60000) // Created in the last minute
-        }
-      },
-      select: {
-        id: true,
-        nama: true
-      },
-      orderBy: {
-        createdAt: 'desc'
-      },
-      take: 3
-    });
-
-    const newIds = recentInactiveWilayah.map(w => w.id);
-    injectedWilayahIds.push(...newIds);
-
-    console.log(`✅ Successfully injected ${createdWilayah.count} wilayah with INACTIVE status`);
-    console.log('📝 Injected wilayah:', recentInactiveWilayah.map(w => `ID: ${w.id}, Name: ${w.nama}`));
-    console.log('🗂️ Current tracked IDs:', injectedWilayahIds);
-
+    console.log(`Wilayah baru dibuat: ${newWilayah.nama} (ID: ${newWilayah.id}) pada ${new Date().toISOString()}`);
+    
+    // Tambahkan ke tracking array
+    injectedWilayahIds.push(newWilayah.id);
+    
   } catch (error) {
-    console.error('❌ Error injecting wilayah:', error);
+    console.error("Gagal membuat data Wilayah:", error.message);
   }
-};
+}
 
-const cleanupInjectedWilayah = async () => {
+// Fungsi untuk cleanup wilayah
+async function cleanupWilayahData() {
   try {
     if (injectedWilayahIds.length === 0) {
-      console.log('🧹 No wilayah to cleanup');
+      console.log('Tidak ada wilayah yang perlu dihapus');
       return;
     }
 
-    console.log('🗑️ Starting cleanup of injected wilayah...');
-    console.log('🎯 Cleaning up IDs:', injectedWilayahIds);
-
-    // Only delete wilayah that don't have any related volunteers or pantis
+    // Hapus wilayah yang tidak memiliki relasi
     const wilayahToDelete = await prisma.wilayah.findMany({
       where: {
-        id: {
-          in: injectedWilayahIds
-        },
+        id: { in: injectedWilayahIds },
         status: 'INACTIVE',
-        volunteers: {
-          none: {}
-        },
-        pantis: {
-          none: {}
-        }
+        volunteers: { none: {} },
+        pantis: { none: {} }
       }
     });
 
     if (wilayahToDelete.length > 0) {
-      const deleteResult = await prisma.wilayah.deleteMany({
-        where: {
-          id: {
-            in: wilayahToDelete.map(w => w.id)
-          }
-        }
-      });
-
-      console.log(`✅ Successfully deleted ${deleteResult.count} wilayah`);
-      console.log('🗑️ Deleted wilayah:', wilayahToDelete.map(w => `ID: ${w.id}, Name: ${w.nama}`));
-
-      // Remove deleted IDs from tracking array
-      const deletedIds = wilayahToDelete.map(w => w.id);
-      injectedWilayahIds = injectedWilayahIds.filter(id => !deletedIds.includes(id));
+      for (const wilayah of wilayahToDelete) {
+        await prisma.wilayah.delete({
+          where: { id: wilayah.id }
+        });
+        console.log(`Wilayah dihapus: ${wilayah.nama} (ID: ${wilayah.id}) pada ${new Date().toISOString()}`);
+        
+        // Remove from tracking array
+        injectedWilayahIds = injectedWilayahIds.filter(id => id !== wilayah.id);
+      }
     } else {
-      console.log('⚠️ No wilayah can be deleted (might have relations or already deleted)');
+      console.log('Tidak ada wilayah yang bisa dihapus (mungkin memiliki relasi)');
     }
-
-    console.log('🗂️ Remaining tracked IDs:', injectedWilayahIds);
-
   } catch (error) {
-    console.error('❌ Error cleaning up wilayah:', error);
+    console.error('Gagal menghapus data Wilayah:', error.message);
   }
-};
+}
 
 const startCronJobs = () => {
-  console.log('⏰ Starting cron jobs for wilayah testing...');
+  // Cronjob untuk membuat data Wilayah setiap 1 menit
+  cron.schedule("*/1 * * * *", () => {
+    console.log("Cronjob triggered pada:", new Date().toISOString());
+    createWilayahData();
+  }, {
+    scheduled: true,
+    timezone: "Asia/Jakarta"
+  });
+
+  // Cronjob untuk cleanup setiap 2 menit
+  cron.schedule("*/2 * * * *", () => {
+    console.log("Cleanup cronjob triggered pada:", new Date().toISOString());
+    cleanupWilayahData();
+  }, {
+    scheduled: true,
+    timezone: "Asia/Jakarta"
+  });
+
+  console.log("Cronjob untuk membuat data Wilayah setiap 1 menit telah diaktifkan");
+  console.log("Cronjob untuk cleanup Wilayah setiap 2 menit telah diaktifkan");
   
-  // Inject 3 random wilayah every 5 hours
-  cron.schedule('0 */5 * * *', () => {
-    console.log('\n⏰ Cron job triggered: Injecting wilayah data');
-    injectRandomWilayah();
-  });
-
-  // Cleanup injected wilayah 2 minutes after injection (runs every 2 minutes)
-  cron.schedule('*/2 * * * *', () => {
-    console.log('\n⏰ Cron job triggered: Cleaning up wilayah data');
-    cleanupInjectedWilayah();
-  });
-
-  console.log('✅ Cron jobs started successfully');
-  console.log('📋 Schedule:');
-  console.log('   - Inject 3 INACTIVE wilayah: Every 5 hours');
-  console.log('   - Cleanup injected wilayah: Every 2 minutes');
+  // Test immediate injection
+  setTimeout(() => {
+    console.log("Test injection dimulai pada:", new Date().toISOString());
+    createWilayahData();
+  }, 5000);
 };
 
 const stopCronJobs = () => {
@@ -156,12 +109,12 @@ const stopCronJobs = () => {
 // Manual functions for testing
 const manualInject = () => {
   console.log('🔧 Manual injection triggered');
-  return injectRandomWilayah();
+  return createWilayahData();
 };
 
 const manualCleanup = () => {
   console.log('🔧 Manual cleanup triggered');
-  return cleanupInjectedWilayah();
+  return cleanupWilayahData();
 };
 
 const getTrackedIds = () => {
